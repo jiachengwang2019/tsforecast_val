@@ -19,7 +19,7 @@ str_ = 'L_Imps'
 net_type = 'Cable'
 
 net_list <- list('USA', 'BRVO', 'ENT', 'SYFY', 'OXYG', 'NBC')
-net_ = 'OXYG'
+net_ = 'USA'
 
 
 # set-up spark connection
