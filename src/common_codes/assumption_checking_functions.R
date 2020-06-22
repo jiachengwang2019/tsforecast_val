@@ -28,15 +28,15 @@ check_stationary <- function(data,
                              start_date = NULL,
                              threshold = 0.05){
   
-  # take the subset data without NA values
+  # take the subset data without NA value
   if (is.null(start_date) == TRUE) start_date = as.Date(min(data$Week))
   subset = data[data$Week >= start_date & is.na(data[,variable]) == F,]
   our_series = as.numeric(unlist(subset[,variable]))
   if (log_transformation == 1) our_series = log(our_series)
   
   # Plot the variable
-  res.p <- ggplot(subset,aes(x = subset$Week)) +
-    geom_rect(aes(xmin = start_date, xmax = max(subset$Date),ymin = -Inf, ymax = Inf), fill = "grey100", alpha = 0.1) +
+  res.p <- ggplot(subset,aes(x = as.Date(subset$Week))) +
+    geom_rect(aes(xmin = start_date, xmax = as.Date(max(subset$Date)),ymin = -Inf, ymax = Inf), fill = "grey100", alpha = 0.1) +
     geom_line(size = 1, aes(y = our_series), color = "blue") +
     ggtitle(paste("Data since",start_date))+
     scale_x_date("", date_breaks = "1 year", date_labels = "%Y") +
