@@ -277,7 +277,7 @@ check_residual_outlier <- function(data,
     ggtitle("Residuals vs Predict") +
     labs(x = "Predict",y = "Residuals") +
     geom_point() +
-    geom_text(aes(label=ifelse(score>0,as.character(Date),'')),hjust = 0,vjust = 0,size = 3) +
+    geom_text(aes(label=ifelse(score>0,as.character(subset$Week),'')),hjust = 0,vjust = 0,size = 3) +
     theme_minimal() +
     theme(axis.text.x = element_text(size = 10),
           axis.text.y = element_text(size = 10),
@@ -384,7 +384,7 @@ check_acf_pacf_arima <- function(data,
   ma.lag = acf.p$data$lag[acf.p$data$Freq > significance_level]
   ar.lag = pacf.p$data$lag[pacf.p$data$Freq > significance_level]
   
-  period = unique(existing_lookup$period)[1]
+  period = unique(existing_lookup$arima_period)[1]
   sma.lag = ma.lag[which(ma.lag%%period == 0)]
   nsma.lag = ma.lag[which(ma.lag%%period != 0)]
   if (length(sma.lag)!=0){
@@ -428,8 +428,8 @@ check_acf_pacf_arima <- function(data,
                   "sma lag" = sma.lag.suggest,"sar lag" = sar.lag.suggest)
   
   # find the lookup-table set on which the model can be updated to
-  lookupnew <- create_arima_lookuptable(max_arima_order = c(nsar.lag.suggest,max(existing_lookup$d),nsma.lag.suggest),
-                                        max_seasonal_order = c(sar.lag.suggest,max(existing_lookup$D),sma.lag.suggest),
+  lookupnew <- create_arima_lookuptable(max_arima_order = c(nsar.lag.suggest,max(existing_lookup$arima_d),nsma.lag.suggest),
+                                        max_seasonal_order = c(sar.lag.suggest,max(existing_lookup$seasonal_d),sma.lag.suggest),
                                         periods = period)
   if (dim(existing_lookup) != dim(lookupnew)){
     lookup_diff = setdiff(lookupnew,existing_lookup)

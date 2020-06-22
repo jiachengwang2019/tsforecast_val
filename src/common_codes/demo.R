@@ -27,7 +27,7 @@ source(here::here("src","common_codes","plotting_functions.R"))
 options(warn = -1,digits = 3,verbose = F,error = NULL)
 
 
-# :::::::::::::::::: PART0 PREPARE THE DATA
+# :::::::::::::::::: PART0 - PREPARE THE DATA
 # Setup the parameters 
 # Notice: 
 # please make sure the net_type is consistent with parameters_CENT/BENT.R function
@@ -103,8 +103,31 @@ champion = find_champion_arima(data = case_data,
 # ::::::::::::::: PART3 - CHECK ASSUMPTIONS FOR SELECTED CHAMPION ARIMA MODEL
 # ::::::::::::::: Part 3.1 check normality residuals
 # This functions works as a post-model selection arima model assumption check and it does the following three things:
-# 1. Perform 3 hypothesis testing on interested predictor variable, in this example, the interested variable is 'SC3_Impressions'
-# 2. Give a suggestion differencing_order to remove the trend in the interested variable
-# 3. Provide the time series plot for interested variable
+# 1. Perform 3 hypothesis testing on champion model residuals (residual = interested_variable_value - predicted_value)
+# 2. Give a histogram for the residual to get first look on the distribution of residual
+# 3. Provide qqplot plot for residual to check normality assumption
+# 
+# Remark:
+# Pay attention to skewness check result since `find_chamption_arima()` function has applied boxcox transformation
+
 normal_check <- check_residual_normality(data = champion$champion_result)
 normal_check
+
+# ::::::::::::::: Part 3.2 check normality residuals
+# This functions works as a post-model selection arima model assumption check and it does the following three things:
+# 1. Pick out the outlier for the residuals using 1.5IQR rule
+# 2. Pick out the extremes for the residuals
+# 3. Provide residual plot to check if there are any obvious patterns that violates the assumption for residuals
+
+outlier_check <- check_residual_outlier(data = champion$champion_result)
+outlier_check
+
+# ::::::::::::::: Part 3.3 check dependency
+
+lookup <- create_arima_lookuptable(max_arima_order = c(7,1,7),
+                                         max_seasonal_order = c(5,0,5),
+                                         periods = c(52))
+dependency_check <- check_acf_pacf_arima(data = champion$champion_result, 
+                                         champion_model = champion$champion_model,
+                                         existing_lookup = lookup) 
+dependency_check
