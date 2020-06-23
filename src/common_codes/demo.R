@@ -37,7 +37,7 @@ options(warn = -1,digits = 3,verbose = F,error = NULL)
 # Notice: 
 # please make sure the net_type is consistent with parameters_CENT/BENT.R function
 net_type = 'Cable'
-net_ = 'USA'
+net_ = 'OXYG'
 
 inputpath = paste0('s3://nbcu-ds-linear-forecasting/processed/pacing/20W030/', net_ ,'_AFL_0420_200424_20W030.csv')
 raw_data_AFL <- create_raw_data(inputFilePath = inputpath,
@@ -76,11 +76,11 @@ st_check
 # Set up possible sarima model parameters candidates 
 # Notice: 
 # The parameter d in the argument max_arima_order(p,d,q) should take the advice from 'differencing_order' results of `check_stationary()`` function
-weeklylookup <- create_arima_lookuptable(max_arima_order = c(5,1,5),
+weeklylookup <- create_arima_lookuptable(max_arima_order = c(3,1,3),
                                            max_seasonal_order = c(1,0,1),
                                            periods = c(52))
 
-OOS_start = as.Date("2019-01-01")
+OOS_start = as.Date("2019-03-30")
 
 wkly_regressors = c(
   "intercept","Jan","Feb", "Mar", "Apr", "May", 
@@ -102,7 +102,7 @@ champion = find_champion_arima(data = case_data,
                                OOS_start = OOS_start,
                                regressors = wkly_regressors,
                                keep_regressors = keep_reg,
-                               max_changepoints = 0, # later also experiment with 3 changepoints
+                               max_changepoints = 2, # later also experiment with 3 changepoints
                                lookuptable = weeklylookup)
 
 champion_bayesian = find_champion_bayesian(data = case_data,
@@ -111,8 +111,7 @@ champion_bayesian = find_champion_bayesian(data = case_data,
                                      log_transformation = 1,
                                      OOS_start = OOS_start,
                                      regressors = wkly_regressors,
-                                     variance_change = T,
-                                     max_changepoints = 0)
+                                     max_changepoints = 2)
 
 
 # ::::::::::::::: PART3 - CHECK ASSUMPTIONS FOR SELECTED CHAMPION ARIMA MODEL
@@ -219,6 +218,7 @@ weekly_forecast_plot(full_data_champion = champion$champion_result,
 weekly_forecast_plot(full_data_champion = champion_bayesian$champion_result,
                      show_variable = "SC3_Impressions",
                      OOS_start = OOS_start)
+
 
 quarterly_forecast_plot(full_data_champion = champion$champion_result,
                         show_variable = "SC3_Impressions",

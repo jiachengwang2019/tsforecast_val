@@ -1183,8 +1183,8 @@ find_quarterly_forecast_bayesian <- function(full_data_champion,
   
   names(quarterly_forecast) = c("in_sample","out_of_sample")
   
-  mape_test_mean = mean(!is.nan(quarterly_forecast[[2]]$mape))
-  smape_test_mean = mean(!is.nan(quarterly_forecast[[2]]$smape))
+  mape_test_mean = mean(quarterly_forecast[[2]]$mape[!is.nan(quarterly_forecast[[2]]$mape)])
+  smape_test_mean = mean(quarterly_forecast[[2]]$smape[!is.nan(quarterly_forecast[[2]]$smape)])
   quarterly_average = c(mape_train_mean,mape_test_mean,smape_train_mean,smape_test_mean)
   names(quarterly_average) = c("MAPE_train", "MAPE_test","SMAPE_train", "SMAPE_test")
   #return(quarterly_forecast)
