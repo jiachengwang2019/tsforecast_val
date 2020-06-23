@@ -21,6 +21,7 @@ source(here::here('src', 'common_codes', 'dependent_functions.R'))
 # Pay attention to the data type, if Broadcast, change this to the 'parameter_BENT.R' function
 source(here::here("src","common_codes","parameters_CENT.R"))
 
+# Use data_prep_functions_v2.R instead of data_prep_functions.R!
 source(here::here("src","common_codes","data_prep_functions_v2.R"))
 source(here::here("src","common_codes","assumption_checking_functions.R"))
 source(here::here("src","common_codes","forecasting_functions.R"))
