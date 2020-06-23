@@ -259,7 +259,7 @@ create_aggregated_data <- function(raw_data,
       hh_dps = unlist(strsplit(x = filter_hh_nt_daypart,split = ";"))
       hh_dps = trimws(hh_dps,which = "both")
       hh_dps = intersect(hh_dps,unique(as.character(filtered_data$HH_NT_Daypart)))
-      if (length(hh_dps) > 0){
+      if (length(hh_dps) == 0){
         warning("Dayparts may not have been entered correctly")
       } else {
         filtered_data = filtered_data %>% filter(HH_NT_Daypart %in% hh_dps)

@@ -3,7 +3,7 @@
 #       Version:        R 3.6.2
 #       Date:           June 19, 2020 
 #       Author:         Jiacheng Wang <Jiacheng.Wang@nbcuni.com>
-#       Purpose:        examples related to TSForecast package 
+#       Purpose:        Examples for TSForecast package 
 #       Input Files:    NONE
 #       Output Files:   NONE
 #       Data Output:    NONE
@@ -17,10 +17,14 @@ library(here)
 
 source(here::here('src', 'common_codes', 'assumption_checking_functions.R'))
 source(here::here('src', 'common_codes', 'dependent_functions.R'))
+
+# Pay attention to the data type, if Broadcast, change this to the 'parameter_BENT.R' function
 source(here::here("src","common_codes","parameters_CENT.R"))
+
 source(here::here("src","common_codes","data_prep_functions_v2.R"))
 source(here::here("src","common_codes","assumption_checking_functions.R"))
 source(here::here("src","common_codes","forecasting_functions.R"))
+source(here::here("src","common_codes","bayesian_forecasting_functions.R"))
 source(here::here("src","common_codes","model_evaluation.R"))
 source(here::here("src","common_codes","plotting_functions.R"))
 
@@ -71,7 +75,7 @@ st_check
 # Set up possible sarima model parameters candidates 
 # Notice: 
 # The parameter d in the argument max_arima_order(p,d,q) should take the advice from 'differencing_order' results of `check_stationary()`` function
-weeklylookup <- create_arima_lookuptable(max_arima_order = c(2,1,2),
+weeklylookup <- create_arima_lookuptable(max_arima_order = c(5,1,5),
                                            max_seasonal_order = c(1,0,1),
                                            periods = c(52))
 
@@ -100,6 +104,16 @@ champion = find_champion_arima(data = case_data,
                                max_changepoints = 0, # later also experiment with 3 changepoints
                                lookuptable = weeklylookup)
 
+champion_bayesian = find_champion_bayesian(data = case_data,
+                                     stream = "SC3_Impressions",
+                                     agg_timescale = "Week",
+                                     log_transformation = 1,
+                                     OOS_start = OOS_start,
+                                     regressors = wkly_regressors,
+                                     variance_change = T,
+                                     max_changepoints = 0)
+
+
 # ::::::::::::::: PART3 - CHECK ASSUMPTIONS FOR SELECTED CHAMPION ARIMA MODEL
 # ::::::::::::::: Part 3.1 check normality residuals
 # This functions works as a post-model selection arima model assumption check and it does the following three things:
@@ -113,6 +127,9 @@ champion = find_champion_arima(data = case_data,
 normal_check <- check_residual_normality(data = champion$champion_result)
 normal_check
 
+normal_check_bayesian <- check_residual_normality(data = champion_bayesian$champion_result)
+normal_check_bayesian
+
 # ::::::::::::::: Part 3.2 check normality residuals
 # This functions works as a post-model selection arima model assumption check and it does the following three things:
 # 1. Pick out the outlier for the residuals using 1.5IQR rule
@@ -122,12 +139,120 @@ normal_check
 outlier_check <- check_residual_outlier(data = champion$champion_result)
 outlier_check
 
-# ::::::::::::::: Part 3.3 check dependency
+outlier_check_bayesian <- check_residual_outlier(data = champion_bayesian$champion_result)
+outlier_check_bayesian
 
+# ::::::::::::::: Part 3.3 check dependency
+# First create a candidate lookup table for arima model parameters, this should be a little bit larger than the
+# lookup table used in `find_champion_arima()` function
 lookup <- create_arima_lookuptable(max_arima_order = c(7,1,7),
                                          max_seasonal_order = c(5,0,5),
                                          periods = c(52))
+
+# This functions works as a post-model selection arima model assumption check and it does the following four things:
+# 1. find out the significant lags of the current model and provide suggestion for possible model parameter choice
+# 2. Provide the ACF plot for residuals
+# 3. Provide the PACF plot for residuals
+# 4. Given the extra arima model candidates lookup table (which provides paramter choice for model with better fit)
+
 dependency_check <- check_acf_pacf_arima(data = champion$champion_result, 
                                          champion_model = champion$champion_model,
                                          existing_lookup = lookup) 
 dependency_check
+
+
+# ::::::::::::::: PART4 - CALCULATE ACCURACY METRICS
+# The following three functions provides MAPE, bias and quarterly prediction summary for training data and testing data.
+
+find_quarterly_forecast(full_data_champion = champion$champion_result,
+                        show_variable = "SC3_Impressions",
+                        weight_variable = "SC3_C_Dur",
+                        network = "Cable",
+                        timescale = "Week",
+                        OOS_start = OOS_start)
+
+find_quarterly_forecast_bayesian(full_data_champion = champion_bayesian$champion_result,
+                        show_variable  = "SC3_Impressions",
+                        weight_variable = "SC3_C_Dur",
+                        network = "Cable",
+                        timescale = "Week",
+                        OOS_start = OOS_start)
+
+find_MAPE(full_data_champion = champion$champion_result,
+          show_variable = "SC3_Impressions",
+          weight_variable = "SC3_C_Dur",
+          network = "Cable",
+          timescale = "Week",
+          OOS_start = OOS_start)
+
+find_MAPE(full_data_champion = champion_bayesian$champion_result,
+          show_variable = "SC3_Impressions",
+          weight_variable = "SC3_C_Dur",
+          network = "Cable",
+          timescale = "Week",
+          OOS_start = OOS_start)
+
+find_bias(full_data_champion = champion$champion_result,
+          show_variable = "SC3_Impressions",
+          weight_variable = "SC3_C_Dur",
+          network = "Cable",
+          timescale = "Week",
+          OOS_start = OOS_start)
+
+find_bias(full_data_champion = champion_bayesian$champion_result,
+          show_variable = "SC3_Impressions",
+          weight_variable = "SC3_C_Dur",
+          network = "Cable",
+          timescale = "Week",
+          OOS_start = OOS_start)
+
+
+# ::::::::::::::: PART5 - CHECK THE PLOT
+# This works as a visualization tool to compare the actural and predict
+# This example aggregate the data in weekly level, thus we use weekly_forecast_plot
+# If daily model is fitted, please make sure to use the daily_forecast_plot
+weekly_forecast_plot(full_data_champion = champion$champion_result,
+                     show_variable = "SC3_Impressions",
+                     OOS_start = OOS_start)
+
+weekly_forecast_plot(full_data_champion = champion_bayesian$champion_result,
+                     show_variable = "SC3_Impressions",
+                     OOS_start = OOS_start)
+
+quarterly_forecast_plot(full_data_champion = champion$champion_result,
+                        show_variable = "SC3_Impressions",
+                        weight_variable = "SC3_C_Dur",
+                        network = "Cable",
+                        timescale = "Week",
+                        OOS_start = OOS_start)
+
+quarterly_forecast_plot(full_data_champion = champion_bayesian$champion_result,
+                        show_variable = "SC3_Impressions",
+                        weight_variable = "SC3_C_Dur",
+                        network = "Cable",
+                        timescale = "Week",
+                        OOS_start = OOS_start)
+
+# ::::::::::::::: PART6 - FIT CHAMPION MODEL
+# After the model detail table finished, we can simply implement the champion model parameters to get the fitted model
+
+# ARIMA_order & ARIMA_seasonal can be found in model detail table
+regset <- unlist(strsplit(champion$regressors, split = ','))
+fit_champion_arima(data = case_data,
+                   stream = 'SC3_Impressions',
+                   agg_timescale = 'Week',
+                   OOS_start = OOS_start,
+                   regressors = regset,
+                   ARIMA_order = c(2,0,3),
+                   ARIMA_seasonal = list(order = c(1,0,1), period = 52))
+
+# If variance change, yearly_seasonality not added to the model, the only parameter we need to figure out for bayesian model is exponential decay parameter alpha.
+# If weekly model fitted, remember to change agg_timescale as 'Week' and seasonality to be 'Year'!
+regset_bayesian <- unlist(strsplit(champion_bayesian$regressors, split = ','))
+fit_champion_bayesian (data = case_data,
+                       stream = 'SC3_Impressions', 
+                       agg_timescale = 'Week', 
+                       OOS_start = OOS_start,
+                       regressors = regset_bayesian,
+                       alpha = 2,
+                       seasonality = 'Year')
