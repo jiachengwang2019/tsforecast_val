@@ -1,2 +1,2 @@
 # tsforecast_val
-Repo to validation TSForecasst package
+Repo to validation TSForecast package
